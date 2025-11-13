@@ -255,3 +255,54 @@ void extract_data()
 		}
 	}
 }
+
+PHP_MINIT_FUNCTION(apm)
+{
+    // Initialization code can be added here if needed
+    return SUCCESS;
+}
+
+PHP_MSHUTDOWN_FUNCTION(apm)
+{
+    // Shutdown code can be added here if needed
+    return SUCCESS;
+}
+
+PHP_RINIT_FUNCTION(apm)
+{
+    // Request initialization code can be added here if needed
+    return SUCCESS;
+}
+
+PHP_RSHUTDOWN_FUNCTION(apm)
+{
+    // Request shutdown code can be added here if needed
+    return SUCCESS;
+}
+
+PHP_MINFO_FUNCTION(apm)
+{
+    php_info_print_table_start();
+    php_info_print_table_row(2, "APM support", "enabled");
+    php_info_print_table_row(2, "Version", PHP_APM_VERSION);
+    php_info_print_table_end();
+
+    DISPLAY_INI_ENTRIES();
+}
+
+zend_module_entry apm_module_entry = {
+    STANDARD_MODULE_HEADER,
+    "apm",
+    NULL, // functions
+    PHP_MINIT(apm),
+    PHP_MSHUTDOWN(apm),
+    PHP_RINIT(apm),
+    PHP_RSHUTDOWN(apm),
+    PHP_MINFO(apm),
+    PHP_APM_VERSION,
+    STANDARD_MODULE_PROPERTIES
+};
+
+#ifdef COMPILE_DL_APM
+ZEND_GET_MODULE(apm)
+#endif
