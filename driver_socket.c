@@ -63,12 +63,12 @@ void apm_driver_socket_process_event(PROCESS_EVENT_ARGS)
 	APM_G(socket_last_event) = &(*APM_G(socket_last_event))->next;
 }
 
-int apm_driver_socket_minit(int module_number TSRMLS_DC)
+int apm_driver_socket_minit(int module_number)
 {
 	return SUCCESS;
 }
 
-int apm_driver_socket_rinit(TSRMLS_D)
+int apm_driver_socket_rinit()
 {
 	APM_G(socket_events) = (apm_event_entry *) malloc(sizeof(apm_event_entry));
 	APM_G(socket_events)->event.type = 0;
@@ -98,7 +98,7 @@ static void recursive_free_event(apm_event_entry **event)
 	free(*event);
 }
 
-static void clear_events(TSRMLS_D)
+static void clear_events()
 {
 	recursive_free_event(&APM_G(socket_events));
 }
@@ -123,7 +123,7 @@ static void clear_events(TSRMLS_D)
 	}
 #endif
 
-int apm_driver_socket_rshutdown(TSRMLS_D)
+int apm_driver_socket_rshutdown()
 {
 	struct sockaddr_un serveraddr;
 	smart_str buf = {0};
@@ -143,7 +143,7 @@ int apm_driver_socket_rshutdown(TSRMLS_D)
 		return SUCCESS;
 	}
 	
-	extract_data(TSRMLS_C);
+	extract_data();
 
 	sd_it = 0;
 
@@ -294,7 +294,7 @@ int apm_driver_socket_rshutdown(TSRMLS_D)
 		add_assoc_zval(ZDATA, "errors", errors);
 	}
 #endif
-	php_json_encode(&buf, ZDATA, 0 TSRMLS_CC);
+	php_json_encode(&buf, ZDATA, 0);
 
 	smart_str_0(&buf);
 
@@ -318,7 +318,7 @@ int apm_driver_socket_rshutdown(TSRMLS_D)
 
 	smart_str_free(&buf);
 
-	clear_events(TSRMLS_C);
+	clear_events();
 
 	for (i = 0; i < sd_it; ++i) {
 		close(sds[i]);
@@ -327,6 +327,6 @@ int apm_driver_socket_rshutdown(TSRMLS_D)
 	return SUCCESS;
 }
 
-void apm_driver_socket_process_stats(TSRMLS_D)
+void apm_driver_socket_process_stats()
 {
 }

@@ -114,7 +114,7 @@ void (*old_error_cb)(int type, const char *error_filename, const uint error_line
 
 void apm_error_cb(int type, const char *error_filename, const uint error_lineno, const char *format, va_list args);
 
-void apm_throw_exception_hook(zval *exception TSRMLS_DC);
+void apm_throw_exception_hook(zval *exception);
 
 static void process_event(int, int, char *, uint, char * TSRMLS_DC);
 
@@ -250,11 +250,11 @@ static PHP_GINIT_FUNCTION(apm)
 	apm_globals->buffer = NULL;
 	apm_globals->drivers = (apm_driver_entry *) malloc(sizeof(apm_driver_entry));
 	apm_globals->drivers->driver.process_event = (void (*)(PROCESS_EVENT_ARGS)) NULL;
-	apm_globals->drivers->driver.process_stats = (void (*)(TSRMLS_D)) NULL;
-	apm_globals->drivers->driver.minit = (int (*)(int TSRMLS_DC)) NULL;
-	apm_globals->drivers->driver.rinit = (int (*)(TSRMLS_D)) NULL;
+	apm_globals->drivers->driver.process_stats = (void (*)()) NULL;
+	apm_globals->drivers->driver.minit = (int (*)(int)) NULL;
+	apm_globals->drivers->driver.rinit = (int (*)()) NULL;
 	apm_globals->drivers->driver.mshutdown = (int (*)()) NULL;
-	apm_globals->drivers->driver.rshutdown = (int (*)(TSRMLS_D)) NULL;
+	apm_globals->drivers->driver.rshutdown = (int (*)()) NULL;
 
 	next = &apm_globals->drivers->next;
 	*next = (apm_driver_entry *) NULL;
@@ -303,7 +303,7 @@ PHP_MINIT_FUNCTION(apm)
 
 		driver_entry = APM_G(drivers);
 		while ((driver_entry = driver_entry->next) != NULL) {
-			if (driver_entry->driver.minit(module_number TSRMLS_CC) == FAILURE) {
+			if (driver_entry->driver.minit(module_number) == FAILURE) {
 				return FAILURE;
 			}
 		}
@@ -364,8 +364,8 @@ PHP_RINIT_FUNCTION(apm)
 		APM_DEBUG("Registering drivers\n");
 		driver_entry = APM_G(drivers);
 		while ((driver_entry = driver_entry->next) != NULL) {
-			if (driver_entry->driver.is_enabled(TSRMLS_C)) {
-				if (driver_entry->driver.rinit(TSRMLS_C)) {
+			if (driver_entry->driver.is_enabled()) {
+				if (driver_entry->driver.rinit()) {
 					return FAILURE;
 				}
 			}
@@ -395,7 +395,7 @@ PHP_RSHUTDOWN_FUNCTION(apm)
 
 		driver_entry = APM_G(drivers);
 		while ((driver_entry = driver_entry->next) != NULL && stats_enabled == 0) {
-			stats_enabled = driver_entry->driver.want_stats(TSRMLS_C);
+			stats_enabled = driver_entry->driver.want_stats();
 		}
 
 		if (stats_enabled) {
@@ -403,7 +403,7 @@ PHP_RSHUTDOWN_FUNCTION(apm)
 
 			/* Request longer than accepted threshold ? */
 			APM_G(duration) = (float) (SEC_TO_USEC(end_tp.tv_sec - begin_tp.tv_sec) + end_tp.tv_usec - begin_tp.tv_usec);
-			APM_G(mem_peak_usage) = zend_memory_peak_usage(1 TSRMLS_CC);
+			APM_G(mem_peak_usage) = zend_memory_peak_usage(1);
 #ifdef HAVE_GETRUSAGE
 			memset(&usg, 0, sizeof(struct rusage));
 
@@ -423,8 +423,8 @@ PHP_RSHUTDOWN_FUNCTION(apm)
 				driver_entry = APM_G(drivers);
 				APM_DEBUG("Stats loop begin\n");
 				while ((driver_entry = driver_entry->next) != NULL) {
-					if (driver_entry->driver.want_stats(TSRMLS_C)) {
-						driver_entry->driver.process_stats(TSRMLS_C);
+					if (driver_entry->driver.want_stats()) {
+						driver_entry->driver.process_stats();
 					}
 				}
 				APM_DEBUG("Stats loop end\n");
@@ -433,8 +433,8 @@ PHP_RSHUTDOWN_FUNCTION(apm)
 
 		driver_entry = APM_G(drivers);
 		while ((driver_entry = driver_entry->next) != NULL) {
-			if (driver_entry->driver.is_enabled(TSRMLS_C)) {
-				if (driver_entry->driver.rshutdown(TSRMLS_C) == FAILURE) {
+			if (driver_entry->driver.is_enabled()) {
+				if (driver_entry->driver.rshutdown() == FAILURE) {
 					code = FAILURE;
 				}
 			}
@@ -478,7 +478,7 @@ void apm_error_cb(int type, const char *error_filename, const uint error_lineno,
 	va_end(args_copy);
 
 	if (APM_G(event_enabled)) {
-		process_event(APM_EVENT_ERROR, type, (char *) error_filename, error_lineno, msg TSRMLS_CC);
+		process_event(APM_EVENT_ERROR, type, (char *) error_filename, error_lineno, msg);
 	}
 	efree(msg);
 
@@ -487,7 +487,7 @@ void apm_error_cb(int type, const char *error_filename, const uint error_lineno,
 /* }}} */
 
 
-void apm_throw_exception_hook(zval *exception TSRMLS_DC)
+void apm_throw_exception_hook(zval *exception)
 {
 	zval *message, *file, *line;
 #if PHP_VERSION_ID >= 70000
@@ -514,25 +514,25 @@ void apm_throw_exception_hook(zval *exception TSRMLS_DC)
 		line = zend_read_property(default_ce, exception, "line", sizeof("line")-1, 0 TSRMLS_CC);
 #endif
 
-		process_event(APM_EVENT_EXCEPTION, E_EXCEPTION, Z_STRVAL_P(file), Z_LVAL_P(line), Z_STRVAL_P(message) TSRMLS_CC);
+		process_event(APM_EVENT_EXCEPTION, E_EXCEPTION, Z_STRVAL_P(file), Z_LVAL_P(line), Z_STRVAL_P(message));
 	}
 }
 
 /* Insert an event in the backend */
-static void process_event(int event_type, int type, char * error_filename, uint error_lineno, char * msg TSRMLS_DC)
+static void process_event(int event_type, int type, char * error_filename, uint error_lineno, char * msg)
 {
 	smart_str trace_str = {0};
 	apm_driver_entry * driver_entry;
 
 	if (APM_G(store_stacktrace)) {
-		append_backtrace(&trace_str TSRMLS_CC);
+		append_backtrace(&trace_str);
 		smart_str_0(&trace_str);
 	}
 
 	driver_entry = APM_G(drivers);
 	APM_DEBUG("Direct processing process_event loop begin\n");
 	while ((driver_entry = driver_entry->next) != NULL) {
-		if (driver_entry->driver.want_event(event_type, type, msg TSRMLS_CC)) {
+		if (driver_entry->driver.want_event(event_type, type, msg)) {
 			driver_entry->driver.process_event(
 				type,
 				error_filename,
@@ -543,7 +543,6 @@ static void process_event(int event_type, int type, char * error_filename, uint 
 #else
 				(APM_G(store_stacktrace) && trace_str.c) ? trace_str.c : ""
 #endif
-				TSRMLS_CC
 			);
 		}
 	}

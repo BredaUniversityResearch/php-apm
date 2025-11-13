@@ -27,18 +27,18 @@
 
 #include "backtrace.h"
 
-ZEND_DECLARE_MODULE_GLOBALS(apm);
+ZEND_EXTERN_MODULE_GLOBALS(apm);
 
 inline static zend_bool php_apm_zend_hash_apply_protection_begin(HashTable* ht);
 inline static zend_bool php_apm_zend_hash_apply_protection_end(HashTable* ht);
-static void debug_print_backtrace_args(zval *arg_array TSRMLS_DC, smart_str *trace_str);
-static void append_flat_zval_r(zval *expr TSRMLS_DC, smart_str *trace_str, char depth);
-static void append_flat_hash(HashTable *ht TSRMLS_DC, smart_str *trace_str, char is_object, char depth);
+static void debug_print_backtrace_args(zval *arg_array, smart_str *trace_str);
+static void append_flat_zval_r(zval *expr, smart_str *trace_str, char depth);
+static void append_flat_hash(HashTable *ht, smart_str *trace_str, char is_object, char depth);
 
 #if PHP_VERSION_ID >= 70000
 static void debug_backtrace_get_args(zend_execute_data *call, zval *arg_array);
 #else
-static zval *debug_backtrace_get_args(void ***curpos TSRMLS_DC);
+static zval *debug_backtrace_get_args(void ***curpos);
 #endif
 
 static int append_variable(zval *expr, smart_str *trace_str);
@@ -107,7 +107,7 @@ inline static zend_bool php_apm_zend_hash_apply_protection_end(zend_array* ht)
 
 
 
-void append_backtrace(smart_str *trace_str TSRMLS_DC)
+void append_backtrace(smart_str *trace_str)
 {
 	/* backtrace variables */
 	zend_execute_data *ptr, *skip;
@@ -204,11 +204,13 @@ void append_backtrace(smart_str *trace_str TSRMLS_DC)
 
 		if (call->func) {
 			func = call->func;
-			function_name = (func->common.scope && func->common.scope->trait_aliases) ?
-				ZSTR_VAL(zend_resolve_method_name(
-					(object ? object->ce : func->common.scope), func)) :
-				(func->common.function_name ?
-					ZSTR_VAL(func->common.function_name) : NULL);
+			// @note DISABLED: zend_resolve_method_name seems undeclared
+//			function_name = (func->common.scope && func->common.scope->trait_aliases) ?
+//				ZSTR_VAL(zend_resolve_method_name(
+//					(object ? object->ce : func->common.scope), func)) :
+//				(func->common.function_name ?
+//					ZSTR_VAL(func->common.function_name) : NULL);
+            function_name = (func->common.function_name) ? ZSTR_VAL(func->common.function_name) : NULL;
 		} else {
 			func = NULL;
 			function_name = NULL;
@@ -435,7 +437,7 @@ static void debug_print_backtrace_args(zval *arg_array TSRMLS_DC, smart_str *tra
 }
 #endif
 
-static void append_flat_zval_r(zval *expr TSRMLS_DC, smart_str *trace_str, char depth)
+static void append_flat_zval_r(zval *expr, smart_str *trace_str, char depth)
 {
 	if (depth >= APM_G(dump_max_depth)) {
 		smart_str_appendl(trace_str, "/* [...] */", sizeof("/* [...] */") - 1);
@@ -457,7 +459,7 @@ static void append_flat_zval_r(zval *expr TSRMLS_DC, smart_str *trace_str, char 
 				php_apm_zend_hash_apply_protection_end(Z_ARRVAL_P(expr));
 				return;
 			}
-			append_flat_hash(Z_ARRVAL_P(expr) TSRMLS_CC, trace_str, 0, depth + 1);
+			append_flat_hash(Z_ARRVAL_P(expr), trace_str, 0, depth + 1);
 			smart_str_appendc(trace_str, ']');
 			php_apm_zend_hash_apply_protection_end(Z_ARRVAL_P(expr));
 			break;
@@ -483,7 +485,7 @@ static void append_flat_zval_r(zval *expr TSRMLS_DC, smart_str *trace_str, char 
 			char *class_name = NULL;
 			zend_uint clen;
 			if (Z_OBJ_HANDLER_P(expr, get_class_name)) {
-				Z_OBJ_HANDLER_P(expr, get_class_name)(expr, (const char **) &class_name, &clen, 0 TSRMLS_CC);
+				Z_OBJ_HANDLER_P(expr, get_class_name)(expr, (const char **) &class_name, &clen, 0);
 			}
 			if (class_name) {
 				smart_str_appendl(trace_str, class_name, clen);
@@ -513,7 +515,7 @@ static void append_flat_zval_r(zval *expr TSRMLS_DC, smart_str *trace_str, char 
 					return;
 				}
 #endif
-				append_flat_hash(properties TSRMLS_CC, trace_str, 1, depth + 1);
+				append_flat_hash(properties, trace_str, 1, depth + 1);
 #if PHP_VERSION_ID >= 70000
 	#ifdef Z_IS_RECURSIVE_P
 			Z_UNPROTECT_RECURSION_P(expr);
@@ -535,7 +537,7 @@ static void append_flat_zval_r(zval *expr TSRMLS_DC, smart_str *trace_str, char 
 
 
 
-static void append_flat_hash(HashTable *ht TSRMLS_DC, smart_str *trace_str, char is_object, char depth)
+static void append_flat_hash(HashTable *ht, smart_str *trace_str, char is_object, char depth)
 {
 	int i = 0;
 
@@ -610,7 +612,7 @@ static void append_flat_hash(HashTable *ht TSRMLS_DC, smart_str *trace_str, char
 		}
 
 		smart_str_appendl(trace_str, "] => ", 5);
-		append_flat_zval_r(*tmp TSRMLS_CC, trace_str, depth);
+		append_flat_zval_r(*tmp, trace_str, depth);
 		zend_hash_move_forward_ex(ht, &iterator);
 	}
 #endif
@@ -701,7 +703,7 @@ static void debug_backtrace_get_args(zend_execute_data *call, zval *arg_array)
 	}
 }
 #else
-static zval *debug_backtrace_get_args(void ***curpos TSRMLS_DC)
+static zval *debug_backtrace_get_args(void ***curpos)
 {
 	void **p = *curpos;
 	zval *arg_array, **arg;

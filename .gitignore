@@ -29,4 +29,4 @@ run-tests.php
 /config.log
 /configure.ac
 .idea/
-apm.dep
+*.dep

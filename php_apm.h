@@ -58,7 +58,7 @@
 #define APM_EVENT_ERROR 1
 #define APM_EVENT_EXCEPTION 2
 
-#define PROCESS_EVENT_ARGS int type, char * error_filename, uint error_lineno, char * msg, char * trace  TSRMLS_DC
+#define PROCESS_EVENT_ARGS int type, char * error_filename, uint error_lineno, char * msg, char * trace
 
 typedef struct apm_event {
 	int event_type;
@@ -145,7 +145,7 @@ int apm_driver_##name##_error_reporting(TSRMLS_D) \
 { \
 	return APM_GLOBAL(name, error_reporting); \
 } \
-zend_bool apm_driver_##name##_want_event(int event_type, int error_level, char *msg TSRMLS_DC) \
+zend_bool apm_driver_##name##_want_event(int event_type, int error_level, char *msg) \
 { \
 	return \
 		APM_GLOBAL(name, enabled) \
