@@ -25,3 +25,8 @@ mkinstalldirs
 modules/
 run-tests.php
 *.lo
+/apm.ini.*
+/config.log
+/configure.ac
+.idea/
+apm.dep

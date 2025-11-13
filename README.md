@@ -13,43 +13,23 @@ It doesn't require any modification to your application's code and let's you col
 
 ### From source:
 
-1. `$ git clone https://github.com/patrickallaert/php-apm.git`
-2. `$ cd php-apm`
-3. `$ phpize`
-4. Configure the extension, by default, **sqlite3**, **MariaDB/MySQL**, **[StatsD](https://github.com/etsy/statsd/)** and **Socket** support are enabled:
-
-    ```
-    $ ./configure [--with-sqlite3[=DIR]] [--with-mysql[=DIR]] [--enable-statsd] [--enable-socket] [--with-debugfile[=FILE]]
-    ```
-    To disable the support of a `--with-*` switch, use: `--without-*`, example: `$ ./configure --without-sqlite3`
-    To disable the support of a `--enable-*` switch, use: `--disable-*`, example: `$ ./configure --disable-socket`
-5. Compile it:
+1. `$ git clone https://github.com/BredaUniversityResearch/php-apm.git`
+1. `$ apt install php-dev`
+1. `$ cd php-apm`
+1. `$ phpize`
+1. To compile php-apm with (only enabling websocket):
+    `$ ./configure --without-sqlite3 --without-mysql --disable-statsd --enable-socket --without-debugfile`
+1. Compile it:
 
     ```
     $ make [-j]
     ```
     Tip: use `-j` to activate parallel compilation.
-6. Install it:
+1. Install it:
 
     ```
     $ sudo make install
     ```
-
-## Upgrading
-
-### From 2.0 to 2.1
-
-#### MariaDB / MySQL
-
-   ```sql
-   ALTER TABLE request ADD COLUMN method TEXT NOT NULL;
-   ```
-
-#### SQLite
-
-   ```sql
-   ALTER TABLE request ADD COLUMN method TEXT NOT NULL DEFAULT '';
-   ```
 
 ## Configuration
 
