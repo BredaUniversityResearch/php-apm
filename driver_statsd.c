@@ -105,7 +105,7 @@ void apm_driver_statsd_process_event(PROCESS_EVENT_ARGS)
 	}
 }
 
-int apm_driver_statsd_minit(int module_number TSRMLS_DC)
+int apm_driver_statsd_minit(int module_number)
 {
 	struct addrinfo hints;
 	char port[8];
@@ -126,7 +126,7 @@ int apm_driver_statsd_minit(int module_number TSRMLS_DC)
 	return SUCCESS;
 }
 
-int apm_driver_statsd_rinit(TSRMLS_D)
+int apm_driver_statsd_rinit()
 {
 	return SUCCESS;
 }
@@ -142,12 +142,12 @@ int apm_driver_statsd_mshutdown(SHUTDOWN_FUNC_ARGS)
 	return SUCCESS;
 }
 
-int apm_driver_statsd_rshutdown(TSRMLS_D)
+int apm_driver_statsd_rshutdown()
 {
 	return SUCCESS;
 }
 
-void apm_driver_statsd_process_stats(TSRMLS_D)
+void apm_driver_statsd_process_stats()
 {
 	int socketDescriptor;
 	char data[1024];

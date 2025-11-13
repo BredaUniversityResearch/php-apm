@@ -34,7 +34,7 @@ ZEND_EXTERN_MODULE_GLOBALS(apm);
 
 APM_DRIVER_CREATE(sqlite3);
 
-static void disconnect(TSRMLS_D)
+static void disconnect()
 {
 	if (APM_G(sqlite3_event_db) != NULL) {
 		sqlite3_close(APM_G(sqlite3_event_db));
@@ -42,7 +42,7 @@ static void disconnect(TSRMLS_D)
 	}
 }
 
-static int perform_db_access_checks(const char *path TSRMLS_DC)
+static int perform_db_access_checks(const char *path)
 {
 // php_stat() crashes with ZTS, see later
 #ifndef ZTS
@@ -58,7 +58,7 @@ static int perform_db_access_checks(const char *path TSRMLS_DC)
 	zval *stat;
 
 	MAKE_STD_ZVAL(stat);
-	php_stat(path, strlen(path), FS_IS_DIR, stat TSRMLS_CC);
+	php_stat(path, strlen(path), FS_IS_DIR, stat);
 
 	is_dir = Z_BVAL_P(stat);
 	zval_dtor(stat);
@@ -86,7 +86,7 @@ PHP_INI_MH(OnUpdateDBFile)
 	if (APM_G(enabled) && APM_G(sqlite3_enabled)) {
 		if (new_value && new_value->len > 0) {
 			snprintf(APM_G(sqlite3_db_file), MAXPATHLEN, "%s/%s", new_value->val, DB_FILE);
-			disconnect(TSRMLS_C);
+			disconnect();
 
 			if (perform_db_access_checks(new_value->val) == FAILURE) {
 				APM_G(sqlite3_enabled) = 0;
@@ -100,21 +100,21 @@ PHP_INI_MH(OnUpdateDBFile)
 	if (APM_G(enabled) && APM_G(sqlite3_enabled)) {
 		if (new_value && new_value_length > 0) {
 			snprintf(APM_G(sqlite3_db_file), MAXPATHLEN, "%s/%s", new_value, DB_FILE);
-			disconnect(TSRMLS_C);
+			disconnect();
 
-			if (perform_db_access_checks(new_value TSRMLS_CC) == FAILURE) {
+			if (perform_db_access_checks(new_value) == FAILURE) {
 				APM_G(sqlite3_enabled) = 0;
 			}
 		} else {
 			APM_G(sqlite3_enabled) = 0;
 		}
 	}
-	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
+	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage);
 #endif
 }
 
 /* Returns the SQLite instance (singleton) */
-sqlite3 * sqlite_get_instance(TSRMLS_D)
+sqlite3 * sqlite_get_instance()
 {
 	int code;
 
@@ -127,7 +127,7 @@ sqlite3 * sqlite_get_instance(TSRMLS_D)
 			 Closing DB file and stop loading the extension
 			 in case of error while opening the database file
 			 */
-			disconnect(TSRMLS_C);
+			disconnect();
 			return NULL;
 		}
 		APM_DEBUG("OK\n");
@@ -184,14 +184,14 @@ CREATE INDEX IF NOT EXISTS stats_request ON stats (request_id);",
 }
 
 /* Insert a request in the backend */
-static void apm_driver_sqlite3_insert_request(TSRMLS_D)
+static void apm_driver_sqlite3_insert_request()
 {
 	char *sql;
 	int ip_int = 0, code;
 	struct in_addr ip_addr;
 	sqlite3 *connection;
 
-	extract_data(TSRMLS_C);
+	extract_data();
 
 	APM_DEBUG("[SQLite driver] Begin insert request\n");
 	if (APM_G(sqlite3_is_request_created)) {
@@ -236,7 +236,7 @@ void apm_driver_sqlite3_process_event(PROCESS_EVENT_ARGS)
 	char *sql;
 	sqlite3 *connection;
 
-	apm_driver_sqlite3_insert_request(TSRMLS_C);
+	apm_driver_sqlite3_insert_request();
 
 	SQLITE_INSTANCE_INIT
 
@@ -253,12 +253,12 @@ void apm_driver_sqlite3_process_event(PROCESS_EVENT_ARGS)
 	sqlite3_free(sql);
 }
 
-int apm_driver_sqlite3_minit(int module_number TSRMLS_DC)
+int apm_driver_sqlite3_minit(int module_number)
 {
 	return SUCCESS;
 }
 
-int apm_driver_sqlite3_rinit(TSRMLS_D)
+int apm_driver_sqlite3_rinit()
 {
 	APM_G(sqlite3_is_request_created) = 0;
 	return SUCCESS;
@@ -269,18 +269,18 @@ int apm_driver_sqlite3_mshutdown(SHUTDOWN_FUNC_ARGS)
 	return SUCCESS;
 }
 
-int apm_driver_sqlite3_rshutdown(TSRMLS_D)
+int apm_driver_sqlite3_rshutdown()
 {
-	disconnect(TSRMLS_C);
+	disconnect();
 	return SUCCESS;
 }
 
-void apm_driver_sqlite3_process_stats(TSRMLS_D)
+void apm_driver_sqlite3_process_stats()
 {
 	char *sql;
 	sqlite3 *connection;
 
-	apm_driver_sqlite3_insert_request(TSRMLS_C);
+	apm_driver_sqlite3_insert_request();
 
 	SQLITE_INSTANCE_INIT
 

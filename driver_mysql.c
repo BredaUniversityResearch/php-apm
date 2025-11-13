@@ -32,7 +32,7 @@ ZEND_EXTERN_MODULE_GLOBALS(apm);
 
 APM_DRIVER_CREATE(mysql)
 
-static void mysql_destroy(TSRMLS_D) {
+static void mysql_destroy() {
 	APM_DEBUG("[MySQL driver] Closing connection\n");
 	mysql_close(APM_G(mysql_event_db));
 	free(APM_G(mysql_event_db));
@@ -41,7 +41,7 @@ static void mysql_destroy(TSRMLS_D) {
 }
 
 /* Returns the MYSQL instance (singleton) */
-MYSQL * mysql_get_instance(TSRMLS_D) {
+MYSQL * mysql_get_instance() {
 	my_bool reconnect = 1;
 	if (APM_G(mysql_event_db) == NULL) {
 		mysql_library_init(0, NULL, NULL);
@@ -54,7 +54,7 @@ MYSQL * mysql_get_instance(TSRMLS_D) {
 		if (mysql_real_connect(APM_G(mysql_event_db), APM_G(mysql_db_host), APM_G(mysql_db_user), APM_G(mysql_db_pass), APM_G(mysql_db_name), APM_G(mysql_db_port), NULL, 0) == NULL) {
 			APM_DEBUG("FAILED! Message: %s\n", mysql_error(APM_G(mysql_event_db)));
 
-			mysql_destroy(TSRMLS_C);
+			mysql_destroy();
 			return NULL;
 		}
 		APM_DEBUG("OK\n");
@@ -133,14 +133,14 @@ CREATE TABLE IF NOT EXISTS stats (\
 }
 
 /* Insert a request in the backend */
-static void apm_driver_mysql_insert_request(TSRMLS_D)
+static void apm_driver_mysql_insert_request()
 {
 	char *application_esc = NULL, *script_esc = NULL, *uri_esc = NULL, *host_esc = NULL, *cookies_esc = NULL, *post_vars_esc = NULL, *referer_esc = NULL, *method_esc = NULL, *sql = NULL;
 	unsigned int application_len = 0, script_len = 0, uri_len = 0, host_len = 0, ip_int = 0, cookies_len = 0, post_vars_len = 0, referer_len = 0, method_len = 0;
 	struct in_addr ip_addr;
 	MYSQL *connection;
 
-	extract_data(TSRMLS_C);
+	extract_data();
 
 	APM_DEBUG("[MySQL driver] Begin insert request\n");
 	if (APM_G(mysql_is_request_created)) {
@@ -216,7 +216,7 @@ void apm_driver_mysql_process_event(PROCESS_EVENT_ARGS)
 	int filename_len = 0, msg_len = 0, trace_len = 0;
 	MYSQL *connection;
 
-	apm_driver_mysql_insert_request(TSRMLS_C);
+	apm_driver_mysql_insert_request();
 
 	MYSQL_INSTANCE_INIT
 
@@ -254,12 +254,12 @@ void apm_driver_mysql_process_event(PROCESS_EVENT_ARGS)
 	efree(trace_esc);
 }
 
-int apm_driver_mysql_minit(int module_number TSRMLS_DC)
+int apm_driver_mysql_minit(int module_number)
 {
 	return SUCCESS;
 }
 
-int apm_driver_mysql_rinit(TSRMLS_D)
+int apm_driver_mysql_rinit()
 {
 	APM_G(mysql_is_request_created) = 0;
 	return SUCCESS;
@@ -268,23 +268,23 @@ int apm_driver_mysql_rinit(TSRMLS_D)
 int apm_driver_mysql_mshutdown(SHUTDOWN_FUNC_ARGS)
 {
 	if (APM_G(mysql_event_db) != NULL) {
-		mysql_destroy(TSRMLS_C);
+		mysql_destroy();
 	}
 
 	return SUCCESS;
 }
 
-int apm_driver_mysql_rshutdown(TSRMLS_D)
+int apm_driver_mysql_rshutdown()
 {
 	return SUCCESS;
 }
 
-void apm_driver_mysql_process_stats(TSRMLS_D)
+void apm_driver_mysql_process_stats()
 {
 	char *sql = NULL;
 	MYSQL *connection;
 
-	apm_driver_mysql_insert_request(TSRMLS_C);
+	apm_driver_mysql_insert_request();
 
 	MYSQL_INSTANCE_INIT
 

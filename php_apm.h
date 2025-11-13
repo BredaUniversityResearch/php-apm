@@ -76,15 +76,15 @@ typedef struct apm_event_entry {
 
 typedef struct apm_driver {
 	void (* process_event)(PROCESS_EVENT_ARGS);
-	void (* process_stats)(TSRMLS_D);
-	int (* minit)(int TSRMLS_DC);
-	int (* rinit)(TSRMLS_D);
+	void (* process_stats);
+	int (* minit)(int );
+	int (* rinit);
 	int (* mshutdown)(SHUTDOWN_FUNC_ARGS);
-	int (* rshutdown)(TSRMLS_D);
-	zend_bool (* is_enabled)(TSRMLS_D);
-	zend_bool (* want_event)(int, int, char * TSRMLS_DC);
-	zend_bool (* want_stats)(TSRMLS_D);
-	int (* error_reporting)(TSRMLS_D);
+	int (* rshutdown);
+	zend_bool (* is_enabled);
+	zend_bool (* want_event)(int, int, char * );
+	zend_bool (* want_stats);
+	int (* error_reporting);
 	zend_bool is_request_created;
 } apm_driver;
 
@@ -127,21 +127,21 @@ typedef struct apm_request_data {
 
 #define APM_DRIVER_CREATE(name) \
 void apm_driver_##name##_process_event(PROCESS_EVENT_ARGS); \
-void apm_driver_##name##_process_stats(TSRMLS_D); \
-int apm_driver_##name##_minit(int TSRMLS_DC); \
-int apm_driver_##name##_rinit(TSRMLS_D); \
+void apm_driver_##name##_process_stats; \
+int apm_driver_##name##_minit(int ); \
+int apm_driver_##name##_rinit; \
 int apm_driver_##name##_mshutdown(); \
-int apm_driver_##name##_rshutdown(TSRMLS_D); \
+int apm_driver_##name##_rshutdown; \
 PHP_INI_MH(OnUpdateAPM##name##ErrorReporting) \
 { \
 	APM_GLOBAL(name, error_reporting) = (apm_error_reporting_new_value : APM_E_##name); \
 	return SUCCESS; \
 } \
-zend_bool apm_driver_##name##_is_enabled(TSRMLS_D) \
+zend_bool apm_driver_##name##_is_enabled \
 { \
 	return APM_GLOBAL(name, enabled); \
 } \
-int apm_driver_##name##_error_reporting(TSRMLS_D) \
+int apm_driver_##name##_error_reporting \
 { \
 	return APM_GLOBAL(name, error_reporting); \
 } \
@@ -159,7 +159,7 @@ zend_bool apm_driver_##name##_want_event(int event_type, int error_level, char *
 		) \
 	; \
 } \
-zend_bool apm_driver_##name##_want_stats(TSRMLS_D) \
+zend_bool apm_driver_##name##_want_stats \
 { \
 	return \
 		APM_GLOBAL(name, enabled) \
@@ -366,10 +366,10 @@ ZEND_EXTERN_MODULE_GLOBALS(apm)
 # define zend_is_auto_global_compat(name) (zend_is_auto_global_str(ZEND_STRL((name))))
 # define add_assoc_long_compat(array, key, value) add_assoc_long_ex((array), (key), (sizeof(key) - 1), (value));
 #else
-# define zend_is_auto_global_compat(name) (zend_is_auto_global(ZEND_STRL((name)) TSRMLS_CC))
+# define zend_is_auto_global_compat(name) (zend_is_auto_global(ZEND_STRL((name))))
 # define add_assoc_long_compat(array, key, value) add_assoc_long_ex((array), (key), (sizeof(key)), (value));
 #endif
 
-void extract_data(TSRMLS_D);
+void extract_data;
 #endif
 

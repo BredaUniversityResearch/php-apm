@@ -247,7 +247,7 @@ void append_backtrace(smart_str *trace_str)
 					class_name = ptr->function_state.function->common.scope->name;
 					class_name_len = strlen(class_name);
 				} else {
-					int dup = zend_get_object_classname(ptr->object, &class_name, &class_name_len TSRMLS_CC);
+					int dup = zend_get_object_classname(ptr->object, &class_name, &class_name_len);
 					if(!dup) {
 						free_class_name = class_name;
 					}
@@ -264,7 +264,7 @@ void append_backtrace(smart_str *trace_str)
 			}
 			if ((! ptr->opline) || ((ptr->opline->opcode == ZEND_DO_FCALL_BY_NAME) || (ptr->opline->opcode == ZEND_DO_FCALL))) {
 				if (ptr->function_state.arguments) {
-					arg_array = debug_backtrace_get_args(&ptr->function_state.arguments TSRMLS_CC);
+					arg_array = debug_backtrace_get_args(&ptr->function_state.arguments);
 				}
 			}
 		}
@@ -342,7 +342,7 @@ void append_backtrace(smart_str *trace_str)
 			debug_print_backtrace_args(&arg_array, trace_str);
 #else
 		if (arg_array) {
-			debug_print_backtrace_args(arg_array TSRMLS_CC, trace_str);
+			debug_print_backtrace_args(arg_array, trace_str);
 #endif
 			zval_ptr_dtor(&arg_array);
 		}
@@ -420,7 +420,7 @@ static void debug_print_backtrace_args(zval *arg_array, smart_str *trace_str)
 	} ZEND_HASH_FOREACH_END();
 }
 #else
-static void debug_print_backtrace_args(zval *arg_array TSRMLS_DC, smart_str *trace_str)
+static void debug_print_backtrace_args(zval *arg_array, smart_str *trace_str)
 {
 	zval **tmp;
 	HashPosition iterator;
@@ -431,7 +431,7 @@ static void debug_print_backtrace_args(zval *arg_array TSRMLS_DC, smart_str *tra
 		if (i++) {
 			smart_str_appendl(trace_str, ", ", 2);
 		}
-		append_flat_zval_r(*tmp TSRMLS_CC, trace_str, 0);
+		append_flat_zval_r(*tmp, trace_str, 0);
 		zend_hash_move_forward_ex(arg_array->value.ht, &iterator);
 	}
 }

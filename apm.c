@@ -103,7 +103,6 @@ uint
 #endif
 length)
 {
-	TSRMLS_FETCH();
 	smart_str_appendl(APM_G(buffer), str, length);
 	smart_str_0(APM_G(buffer));
 	return length;
@@ -116,7 +115,7 @@ void apm_error_cb(int type, const char *error_filename, const uint error_lineno,
 
 void apm_throw_exception_hook(zval *exception);
 
-static void process_event(int, int, char *, uint, char * TSRMLS_DC);
+static void process_event(int, int, char *, uint, char * C);
 
 /* recorded timestamp for the request */
 struct timeval begin_tp;
@@ -470,7 +469,6 @@ void apm_error_cb(int type, const char *error_filename, const uint error_lineno,
 {
 	char *msg;
 	va_list args_copy;
-	TSRMLS_FETCH();
 
 	/* A copy of args is needed to be used for the old_error_cb */
 	va_copy(args_copy, args);
@@ -507,11 +505,11 @@ void apm_throw_exception_hook(zval *exception)
 		file = zend_read_property(default_ce, exception, "file", sizeof("file")-1, 0, &rv);
 		line = zend_read_property(default_ce, exception, "line", sizeof("line")-1, 0, &rv);
 #else
-		default_ce = zend_exception_get_default(TSRMLS_C);
+		default_ce = zend_exception_get_default();
 
-		message = zend_read_property(default_ce, exception, "message", sizeof("message")-1, 0 TSRMLS_CC);
-		file = zend_read_property(default_ce, exception, "file", sizeof("file")-1, 0 TSRMLS_CC);
-		line = zend_read_property(default_ce, exception, "line", sizeof("line")-1, 0 TSRMLS_CC);
+		message = zend_read_property(default_ce, exception, "message", sizeof("message")-1, 0);
+		file = zend_read_property(default_ce, exception, "file", sizeof("file")-1, 0);
+		line = zend_read_property(default_ce, exception, "line", sizeof("line")-1, 0);
 #endif
 
 		process_event(APM_EVENT_EXCEPTION, E_EXCEPTION, Z_STRVAL_P(file), Z_LVAL_P(line), Z_STRVAL_P(message));
@@ -569,7 +567,7 @@ static void process_event(int event_type, int type, char * error_filename, uint 
 #define FETCH_HTTP_GLOBALS(name) (tmp = PG(http_globals)[TRACK_VARS_##name])
 #endif
 
-void extract_data(TSRMLS_D)
+void extract_data()
 {
 	zval *tmp;
 
@@ -606,7 +604,7 @@ void extract_data(TSRMLS_D)
 				zend_string_release(tmpstr);
 #else
 				APM_G(buffer) = &APM_RD(cookies);
-				zend_print_zval_r_ex(apm_write, tmp, 0 TSRMLS_CC);
+				zend_print_zval_r_ex(apm_write, tmp, 0);
 #endif
 				APM_RD(cookies_found) = 1;
 			}
@@ -623,7 +621,7 @@ void extract_data(TSRMLS_D)
 				zend_string_release(tmpstr);
 #else
 				APM_G(buffer) = &APM_RD(post_vars);
-				zend_print_zval_r_ex(apm_write, tmp, 0 TSRMLS_CC);
+				zend_print_zval_r_ex(apm_write, tmp, 0);
 #endif
 				APM_RD(post_vars_found) = 1;
 			}

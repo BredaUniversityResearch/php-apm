@@ -24,7 +24,7 @@
 
 #define APM_E_sqlite3 APM_E_ALL
 
-#define SQLITE_INSTANCE_INIT_EX(ret) connection = sqlite_get_instance(TSRMLS_C); \
+#define SQLITE_INSTANCE_INIT_EX(ret) connection = sqlite_get_instance(); \
 	if (connection == NULL) { \
 		return ret; \
 	}
