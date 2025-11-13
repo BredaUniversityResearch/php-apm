@@ -17,8 +17,13 @@ It doesn't require any modification to your application's code and let's you col
 1. `$ apt install php-dev`
 1. `$ cd php-apm`
 1. `$ phpize`
-1. To compile php-apm with (only enabling websocket):
-    `$ ./configure --without-sqlite3 --without-mysql --disable-statsd --enable-socket --without-debugfile`
+1. Configure the extension, by default, **sqlite3**, **MariaDB/MySQL**, **[StatsD](https://github.com/etsy/statsd/)** and **Socket** support are enabled:
+
+    ```
+    $ ./configure [--with-sqlite3[=DIR]] [--with-mysql[=DIR]] [--enable-statsd] [--enable-socket] [--with-debugfile[=FILE]]
+    ```
+    To disable the support of a `--with-*` switch, use: `--without-*`, example: `$ ./configure --without-sqlite3`
+    To disable the support of a `--enable-*` switch, use: `--disable-*`, example: `$ ./configure --disable-socket`
 1. Compile it:
 
     ```
